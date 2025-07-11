@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SudanFoodConnect</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    defer
+  ></script>
+  <style>
+    #map {
+      height: 70vh;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <!-- Header -->
+  <header class="bg-green-600 text-white p-4 text-center text-2xl font-bold">
+    SudanFoodConnect
+  </header>
+
+  <!-- Search Bar -->
+  <div class="p-4">
+    <input
+      type="text"
+      placeholder="Search for a location..."
+      class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-500"
+    />
+  </div>
+
+  <!-- Map Container -->
+  <div id="map" class="mx-4 rounded-lg shadow-lg z-0"></div>
+
+  <a
+    href="add.html"
+    class="fixed bottom-6 right-6 bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition"
+    title="Add new location"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      class="w-6 h-6"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+    </svg>
+  </a>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const map = L.map('map').setView([15.5007, 32.5599], 6);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    const savedLocations = JSON.parse(localStorage.getItem('locations') || '[]');
+    const markers = [];
+    let userLatLng = null;
+
+    // Haversine formula to calculate distance between two coordinates
+    function getDistanceKm(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Radius of Earth in km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // Function to plot all markers
+    function plotMarkers() {
+      savedLocations.forEach(loc => {
+        let distanceText = '';
+        if (userLatLng) {
+          const distance = getDistanceKm(userLatLng.lat, userLatLng.lng, loc.lat, loc.lng);
+          distanceText = `<br>📍 ${distance.toFixed(2)} km away from you`;
+        }
+
+        const marker = L.marker([loc.lat, loc.lng])
+          .bindPopup(`<strong>${loc.name}</strong><br>${loc.city}<br>${loc.description}${distanceText}`)
+          .addTo(map);
+
+        markers.push({ marker, data: loc });
+      });
+    }
+
+    // Get user location
+    navigator.geolocation.getCurrentPosition(
+      position => {
+        userLatLng = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+
+        // Show user's location on map
+        const userMarker = L.circleMarker([userLatLng.lat, userLatLng.lng], {
+          radius: 8,
+          fillColor: "#007bff",
+          color: "#0056b3",
+          weight: 2,
+          fillOpacity: 0.8
+        })
+        .addTo(map)
+        .bindPopup("You are here")
+        .openPopup();
+
+        map.setView([userLatLng.lat, userLatLng.lng], 10);
+
+        
+        plotMarkers();
+      },
+      error => {
+        alert("Could not access your location. Showing locations without distance.");
+        plotMarkers();
+      }
+    );
+
+    const searchInput = document.querySelector('input[type="text"]');
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const query = searchInput.value.trim().toLowerCase();
+        if (query === "") return;
+
+        let matchFound = false;
+
+        markers.forEach(({ marker, data }) => {
+          const nameMatch = data.name.toLowerCase() === query;
+          const cityMatch = data.city.toLowerCase() === query;
+
+          if (nameMatch || cityMatch) {
+            matchFound = true;
+            marker.openPopup();
+            map.setView([data.lat, data.lng], 13);
+          } else {
+            map.removeLayer(marker);
+          }
+        });
+
+        if (!matchFound) {
+          alert(`No location found for "${searchInput.value}"`);
+          markers.forEach(({ marker }) => marker.addTo(map));
+        }
+      }
+    });
+  });
+</script>
+
+
+
+
+</body>
+</html>
