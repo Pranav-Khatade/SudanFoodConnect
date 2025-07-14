@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SudanFoodConnect - Public Locations</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+  <div class="max-w-4xl mx-auto bg-white shadow-md rounded-lg p-6">
+    <h1 class="text-2xl font-bold mb-4 text-center text-green-600">📍 Public Food Drop-Off Locations</h1>
+    <table class="w-full table-auto border-collapse">
+      <thead>
+        <tr class="bg-green-100">
+          <th class="border px-4 py-2">Location Name</th>
+          <th class="border px-4 py-2">Latitude</th>
+          <th class="border px-4 py-2">Longitude</th>
+        </tr>
+      </thead>
+      <tbody id="locationsTable" class="text-center">
+        <!-- Data will be inserted here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const apiUrl = "https://firestore.googleapis.com/v1/projects/sudanfoodconnect/databases/(default)/documents/locations";
+
+    async function loadLocations() {
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        const tbody = document.getElementById("locationsTable");
+
+        if (data.documents && data.documents.length > 0) {
+          data.documents.forEach(doc => {
+            const fields = doc.fields;
+            const name = fields.name?.stringValue || "N/A";
+            const lat = fields.latitude?.doubleValue || fields.latitude?.integerValue || "N/A";
+            const lng = fields.longitude?.doubleValue || fields.longitude?.integerValue || "N/A";
+
+            const row = `<tr>
+              <td class="border px-4 py-2">${name}</td>
+              <td class="border px-4 py-2">${lat}</td>
+              <td class="border px-4 py-2">${lng}</td>
+            </tr>`;
+
+            tbody.innerHTML += row;
+          });
+        } else {
+          tbody.innerHTML = `<tr><td colspan="3" class="border px-4 py-4 text-gray-500">No locations found.</td></tr>`;
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+        document.getElementById("locationsTable").innerHTML = `<tr><td colspan="3" class="border px-4 py-4 text-red-500">Error loading data.</td></tr>`;
+      }
+    }
+
+    loadLocations();
+  </script>
+</body>
+</html>

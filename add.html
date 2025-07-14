@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add Location - SudanFoodConnect</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  
+  <header class="bg-green-600 text-white p-4 text-center text-2xl font-bold">
+    Add New Location
+  </header>
+
+  
+  <form
+    id="locationForm"
+    class="max-w-xl mx-auto mt-6 bg-white p-6 rounded-lg shadow-md space-y-4"
+  >
+    <input
+      type="text"
+      placeholder="Location Name"
+      name="name"
+      class="w-full p-3 border border-gray-300 rounded-lg"
+      required
+    />
+    <input
+      type="text"
+      placeholder="City / Area"
+      name="city"
+      class="w-full p-3 border border-gray-300 rounded-lg"
+      required
+    />
+    <input
+      type="text"
+      placeholder="Coordinates (Lat, Lng)"
+      name="coordinates"
+      class="w-full p-3 border border-gray-300 rounded-lg"
+      required
+    />
+    <textarea
+      placeholder="Description (optional)"
+      name="description"
+      class="w-full p-3 border border-gray-300 rounded-lg"
+    ></textarea>
+    <button
+      type="submit"
+      class="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"
+    >
+      Submit Location
+    </button>
+  </form>
+
+  
+  <div class="text-center mt-4">
+    <a href="index.html" class="text-green-600 hover:underline">
+      ← Back to Map
+    </a>
+  </div>
+
+
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-analytics-compat.js"></script>
+
+ 
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC8mfApArQdYZYPpRc6hU3RdDy5vsxB-rU",
+      authDomain: "sudanfoodconnect.firebaseapp.com",
+      projectId: "sudanfoodconnect",
+      storageBucket: "sudanfoodconnect.firebasestorage.app",
+      messagingSenderId: "925302981131",
+      appId: "1:925302981131:web:7b6cb87725d4f48385bd0e",
+      measurementId: "G-V1PHKW6VLD"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const analytics = firebase.analytics();
+  </script>
+
+  
+  <script>
+    document.getElementById("locationForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const name = this.name.value.trim();
+      const city = this.city.value.trim();
+      const coordinates = this.coordinates.value.trim();
+      const description = this.description.value.trim();
+
+      const parts = coordinates.split(",");
+      if (parts.length !== 2) {
+        alert("Please enter valid coordinates in the format: latitude, longitude");
+        return;
+      }
+
+      const [lat, lng] = parts.map(p => parseFloat(p.trim()));
+      if (isNaN(lat) || isNaN(lng)) {
+        alert("Coordinates must be valid numbers.");
+        return;
+      }
+
+      try {
+        await db.collection("locations").add({
+          name,
+          city,
+          lat,
+          lng,
+          description,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        alert("Location added successfully!");
+        window.location.href = "index.html";
+      } catch (error) {
+        console.error("Error saving location:", error);
+        alert("Something went wrong. Please try again.");
+      }
+    });
+  </script>
+
+</body>
+</html>
